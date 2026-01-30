@@ -86,7 +86,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         key="last_lock_action_trigger",
         name="Last Action Trigger",
         icon="mdi:door",
-        # info_function=lambda slf: slf.coordinator._async_update(),
+        trigger_update=lambda slf: slf.coordinator._async_update(),
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
@@ -170,5 +170,7 @@ class NukiSensor(NukiEntity, SensorEntity):
     def _async_update_attrs(self) -> None:
         """Update the entity attributes."""
         self._attr_native_value = self.entity_description.info_function(self)
+        if self.entity_description.trigger_update:
+            self.entity_description.trigger_update(self)
         if self.entity_description.icon_function:
             self._attr_icon = self.entity_description.icon_function(self)
