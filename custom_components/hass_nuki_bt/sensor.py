@@ -86,7 +86,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         key="last_lock_action_trigger",
         name="Last Action Trigger",
         icon="mdi:door",
-        info_function=lambda slf: slf.coordinator._async_update(),
+        # info_function=lambda slf: slf.coordinator._async_update(),
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
