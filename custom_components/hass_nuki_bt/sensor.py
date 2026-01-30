@@ -35,6 +35,7 @@ class NukiSensorEntityDescription(SensorEntityDescription):
 
     info_function: Callable | None = lambda slf: slf.device.keyturner_state[slf.sensor]
     icon_function: Callable | None = None
+    trigger_update: Callable | None = None
 
 SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
     "name": NukiSensorEntityDescription(
