@@ -86,6 +86,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         key="last_lock_action_trigger",
         name="Last Action Trigger",
         icon="mdi:door",
+        info_function=lambda slf: slf.coordinator._async_update(),
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
@@ -132,7 +133,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         entity_category=EntityCategory.DIAGNOSTIC,
         info_function=lambda slf: ts.replace(tzinfo=datetime.timezone(datetime.timedelta(minutes=slf.device.keyturner_state['timezone_offset']))) \
              if (ts := slf.coordinator.last_nuki_log_entry.get("timestamp")) else None,
-        entity_registry_enabled_default=False,
+        entity_registry_enabled_default=True,
     ),
     "last_state_timestamp": NukiSensorEntityDescription(
         key="last_state_timestamp",
