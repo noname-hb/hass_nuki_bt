@@ -142,7 +142,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         entity_category=EntityCategory.DIAGNOSTIC,
         info_function=lambda slf: ks['current_time'].replace(tzinfo=datetime.timezone(datetime.timedelta(minutes=ks['timezone_offset']))) \
             if (ks := slf.device.keyturner_state) else None,
-        entity_registry_enabled_default=False,
+        entity_registry_enabled_default=True,
     ),
 }
 
