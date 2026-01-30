@@ -35,6 +35,7 @@ class NukiSensorEntityDescription(SensorEntityDescription):
 
     info_function: Callable | None = lambda slf: slf.device.keyturner_state[slf.sensor]
     icon_function: Callable | None = None
+    trigger_update: Callable | None = None
 
 SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
     "name": NukiSensorEntityDescription(
@@ -86,6 +87,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         key="last_lock_action_trigger",
         name="Last Action Trigger",
         icon="mdi:door",
+        trigger_update=lambda slf: slf.coordinator._async_update(),
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
@@ -102,8 +104,8 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         name="Last Nuki command status",
         info_function=lambda slf: slf.device.last_action_status,
         icon_function=lambda slf: "mdi:lock-check" if slf.device.last_action_status == NukiConst.StatusCode.COMPLETED \
-            or slf.device.last_action_status == NukiConst.StatusCode.ACCEPTED \
-                else "mdi:lock-alert",
+                                                      or slf.device.last_action_status == NukiConst.StatusCode.ACCEPTED \
+            else "mdi:lock-alert",
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
@@ -123,7 +125,7 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         # There is no user name if last action was triggered by button/manual etc.
         info_function=lambda slf: name if (name := slf.coordinator.last_nuki_log_entry.get("name")) else \
             trigger if ((data:=slf.coordinator.last_nuki_log_entry.get("data")) and (trigger := data.get("trigger"))) \
-            else "Unknown",
+                else "Unknown",
     ),
     "last_log_timestamp": NukiSensorEntityDescription(
         key="last_log_timestamp",
@@ -131,8 +133,8 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         info_function=lambda slf: ts.replace(tzinfo=datetime.timezone(datetime.timedelta(minutes=slf.device.keyturner_state['timezone_offset']))) \
-             if (ts := slf.coordinator.last_nuki_log_entry.get("timestamp")) else None,
-        entity_registry_enabled_default=False,
+            if (ts := slf.coordinator.last_nuki_log_entry.get("timestamp")) else None,
+        entity_registry_enabled_default=True,
     ),
     "last_state_timestamp": NukiSensorEntityDescription(
         key="last_state_timestamp",
@@ -141,12 +143,12 @@ SENSOR_TYPES: dict[str, NukiSensorEntityDescription] = {
         entity_category=EntityCategory.DIAGNOSTIC,
         info_function=lambda slf: ks['current_time'].replace(tzinfo=datetime.timezone(datetime.timedelta(minutes=ks['timezone_offset']))) \
             if (ks := slf.device.keyturner_state) else None,
-        entity_registry_enabled_default=False,
+        entity_registry_enabled_default=True,
     ),
 }
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+        hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up Nuki sensor based on a config entry."""
     coordinator: NukiDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
@@ -169,5 +171,7 @@ class NukiSensor(NukiEntity, SensorEntity):
     def _async_update_attrs(self) -> None:
         """Update the entity attributes."""
         self._attr_native_value = self.entity_description.info_function(self)
+        if self.entity_description.trigger_update:
+            self.entity_description.trigger_update(self)
         if self.entity_description.icon_function:
             self._attr_icon = self.entity_description.icon_function(self)
